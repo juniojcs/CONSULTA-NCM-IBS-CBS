@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Consulta NCM · IBS e CBS</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f6f7f9;--card:#fff;--tx:#14181f;--mut:#5b6573;--bd:#dde1e7;--zero:#0f7b4a;--zerobg:#e3f5ec;--std:#444c58;--stdbg:#eceef2;--wr:#9a5b00;--wrbg:#fff1d9;--ac:#2250d8}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101318;--card:#181c23;--tx:#eef1f5;--mut:#9aa4b2;--bd:#2a303a;--zero:#5fd49b;--zerobg:#12301f;--std:#c0c7d2;--stdbg:#252a33;--wr:#f0b45a;--wrbg:#3a2a0e;--ac:#7fa0ff}}
+:root[data-theme="dark"]{--bg:#101318;--card:#181c23;--tx:#eef1f5;--mut:#9aa4b2;--bd:#2a303a;--zero:#5fd49b;--zerobg:#12301f;--std:#c0c7d2;--stdbg:#252a33;--wr:#f0b45a;--wrbg:#3a2a0e;--ac:#7fa0ff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:640px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:1.35rem;margin:0 0 4px}
+.sub{color:var(--mut);margin:0 0 16px;font-size:.92rem}
+input{width:100%;font-size:1.3rem;padding:14px 16px;border-radius:12px;border:2px solid var(--bd);background:var(--card);color:var(--tx);outline:none}
+input:focus{border-color:var(--ac)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px;margin-top:14px}
+.badge{display:inline-block;padding:4px 12px;border-radius:999px;font-weight:700;font-size:.92rem}
+.zero{background:var(--zerobg);color:var(--zero)}.std{background:var(--stdbg);color:var(--std)}.wr{background:var(--wrbg);color:var(--wr)}
+.big{font-size:1.12rem;font-weight:650;margin:10px 0 2px}
+.mut{color:var(--mut);font-size:.9rem}
+.note{margin-top:8px;padding:8px 10px;border-radius:8px;background:var(--wrbg);color:var(--wr);font-size:.88rem}
+.codes{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.cd{font-variant-numeric:tabular-nums;font-size:.85rem;padding:3px 8px;border-radius:6px;background:var(--stdbg);cursor:pointer}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.chip{border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:999px;padding:6px 12px;font-size:.9rem;cursor:pointer}
+.warn{font-size:.82rem;color:var(--mut);margin-top:22px}
+</style>
+</head>
+<body>
+<main>
+<h1>Consulta NCM · IBS e CBS</h1>
+<p class="sub">Digite o NCM (com ou sem pontos) ou o nome do produto. O resultado aparece na hora.</p>
+<input id="q" autocomplete="off" placeholder="Ex.: 1006.30.11 ou café" autofocus>
+<div class="chips" id="chips"></div>
+<div id="out"></div>
+<p class="warn">Carregados: Anexos I, XII e XV (alíquota zero ou redução de 100%) e Anexos IV, V, VI, VII e VIII (redução de 60%), conforme o texto consolidado da LC 214/2025 com as LCs 227/2026 e 235/2026, conferido em 08/11/2026 no Buscador NCM. Ainda não carregados: Anexos IX, X, XI e XIII, Imposto Seletivo (XVII) e medicamentos (art. 146). NCM fora desta base não significa tributação integral. A lista é taxativa e tem condições e exceções no texto legal. Não substitui consulta contábil.</p>
+</main>
+<script>
+// Anexo I · art. 125. p = prefixos (só dígitos), x = exceções, c = condição legal, xn = texto das exceções.
+const R=[
+{i:1,n:"Arroz",p:["100620","100630","10064000"]},
+{i:2,n:"Leite (consumo direto)",p:["04011010","04011090","04012010","04012090","04014010","04015010"],c:"Conforme requisitos da legislação específica para consumo direto pela população."},
+{i:3,n:"Leite em pó",p:["04021010","04021090","04022110","04022120","04022910","04022920"],c:"Conforme requisitos da legislação específica."},
+{i:4,n:"Fórmulas infantis",p:["19011010","19011090","21069090"],c:"Conforme requisitos da legislação específica."},
+{i:5,n:"Manteiga",p:["04051000"]},
+{i:6,n:"Margarina",p:["15171000"]},
+{i:7,n:"Feijões",p:["07133319","07133329","07133399","07133590"]},
+{i:8,n:"Café",p:["0901","21011"]},
+{i:9,n:"Óleo de babaçu",p:["15132120"],c:"Conforme requisitos para consumo como alimento."},
+{i:10,n:"Farinha de mandioca, tapioca e sucedâneos",p:["11062000","19030000"]},
+{i:11,n:"Farinha, grumos e sêmolas de milho",p:["11022000","11031300"]},
+{i:12,n:"Grãos de milho",p:["11041900","11042300"]},
+{i:13,n:"Farinha de trigo",p:["11010010"]},
+{i:14,n:"Açúcar",p:["17011400","17019900"]},
+{i:15,n:"Massas alimentícias",p:["19021"]},
+{i:16,n:"Pão francês e sua pré-mistura ou massa",p:["19059090","19012010","19012090"],c:"O pão deve atender à descrição legal do pão francês (formato, ingredientes, conformidade com a legislação)."},
+{i:17,n:"Grãos de aveia",p:["11041200","11042200"]},
+{i:18,n:"Farinha de aveia",p:["11029000"]},
+{i:19,n:"Carnes bovina, suína, ovina, caprina, de aves e produtos de origem animal",p:["0201","0202","02061000","02062","02102000","0203","02063000","02064","020910","02101","0204","02109920","02109990","02068000","02069000","0207","02099000","0210991"],x:["02074300","02075300"],xn:"Exceção: 0207.43.00 e 0207.53.00 (foie gras) não entram. Exclui foies gras em geral."},
+{i:20,n:"Peixes e carnes de peixes",p:["0302","0303","03043","03046"],x:["03021","03023","030251","030252","030253","03029","03031","03034","030363","030364","030365","03039"],xn:"Exceção: salmonídeos, atuns, bacalhaus, hadoque, saithe e ovas/subprodutos ficam de fora. Confira o código exato."},
+{i:21,n:"Queijos (mozarela, minas, prato, coalho, ricota, requeijão, provolone, parmesão, fresco, reino)",p:["04061010","04061090","04062000","04069010","04069020","04069030"]},
+{i:22,n:"Sal",p:["25010020","25010090"],c:"Com teor de iodo dentro dos limites para consumo humano."},
+{i:23,n:"Mate",p:["0903"]},
+{i:24,n:"Farinha com baixo teor de proteína (aminoacidopatias, acidemias, ciclo da ureia)",p:["19019090"]},
+{i:25,n:"Massas com baixo teor de proteína (aminoacidopatias, acidemias, ciclo da ureia)",p:["19021900"]},
+{i:26,n:"Fórmulas dietoterápicas para erros inatos do metabolismo",p:["21069090"]}
+];
+R.forEach(r=>r.g="I");
+// Anexo XV · art. 148 (redução de 100%). Mesma estrutura de regras.
+const cXV="Desde que não cozidos. Processos simples (descasque, corte, higienização, embalagem, resfriamento, congelamento) mantêm o benefício, conforme art. 148.";
+const R15=[
+{i:1,n:"Ovos",p:["04072"]},
+{i:2,n:"Produtos hortícolas",p:["0701","07020000","0703","0704","0705","0706","07070000","0708","0709","0710"],x:["07095","07108000"],xn:"Exceção: cogumelos e trufas (0709.5) e o código 0710.80.00 não entram."},
+{i:3,n:"Frutas frescas, refrigeradas e congeladas",p:["0803","0804","0805","0806","0807","0808","0809","0810","0811"],c:"Congeladas somente sem adição de açúcar ou outros edulcorantes. Fresca ou refrigerada, sem cozimento."},
+{i:4,n:"Plantas e produtos de floricultura (Capítulo 6)",p:["06"]},
+{i:5,n:"Raízes e tubérculos (mandioca, batata-doce, inhame etc.)",p:["0714"]},
+{i:6,n:"Cocos",p:["08011"]}
+];
+R15.forEach(r=>{r.g="XV";r.c=r.c?r.c+" "+cXV:cXV});
+const G={I:{b:"Alíquota zero",l:"Anexo I · art. 125 da LC 214/2025 · cClassTrib 200003 (CST 200)",e:"IBS e CBS reduzidos a 100%, com manutenção de crédito"},XV:{b:"Redução de 100% (imposto zero)",l:"Anexo XV · art. 148 da LC 214/2025 · cClassTrib 200014 (CST 200)",e:"Alíquotas de IBS e CBS reduzidas a zero"}};
+// Anexo VII · art. 135 (redução de 60%).
+const R7=[
+{i:1,n:"Crustáceos (exceto lagostas e lagostim) e moluscos",p:["03061","03063","03073100","03073200","03074200","030743","03075100","03075200","03079100","03079200"],x:["030611","03061500","03063100","03063400","03063910"],xn:"Exceções: lagostas e lagostim (0306.11, 0306.15.00, 0306.31.00), 0306.34.00 e 0306.39.10 não entram."},
+{i:2,n:"Leite fermentado, bebidas e compostos lácteos",p:["04032000","04039000","22029900"],c:"Conforme requisitos da legislação específica."},
+{i:3,n:"Mel natural",p:["04090000"]},
+{i:4,n:"Farinhas (trigo com centeio, de frutas, legumes secos, soja e outras)",p:["11010020","11051000","11052000","11061000","11063000","12081000","12089000"],c:"Ressalvados os produtos do Anexo I."},
+{i:5,n:"Grumos e sêmolas de trigo e de outros cereais",p:["11031100","11031900"],c:"Ressalvados os produtos do Anexo I."},
+{i:6,n:"Grãos de outros cereais",p:["11042900"],c:"Ressalvados os produtos do Anexo I."},
+{i:7,n:"Amido de milho",p:["11081200"]},
+{i:8,n:"Óleos de soja, milho, canola e demais óleos vegetais",p:["150790","1508","1511","1512","1513","1514","1515"],c:"Conforme requisitos da legislação específica para consumo como alimento."},
+{i:9,n:"Massas alimentícias recheadas e outras massas",p:["19022000","19023000"]},
+{i:10,n:"Sucos naturais de fruta ou hortícolas",p:["2009"],c:"Sem adição de açúcar ou edulcorantes e sem conservantes."},
+{i:11,n:"Polpas de frutas ou hortícolas",p:["200811","200819","200820","200830","200840","200850","200860","200870","200880","200891","200893","200897","200899"],c:"Sem adição de açúcar ou edulcorantes e sem conservantes."},
+{i:12,n:"Pão de forma",p:["19059010"]},
+{i:13,n:"Extrato de tomate",p:["20029000"]},
+{i:14,n:"Frutas, hortícolas e demais produtos vegetais dos capítulos 7 e 8",p:["07095","07108000","0712","0713","08012","08013","0802","0813"],x:["07133319","07133329","07133399","07133590"],c:"Sem adição de açúcar ou edulcorantes. Ressalvadas as frutas de casca rija não regionais e os produtos dos Anexos I e XV; excetuadas as posições 07.11, 08.12 e 0814.00.00."},
+{i:15,n:"Cereais (cap. 10) e sementes e frutos oleaginosos (cap. 12)",p:["10","12"],x:["100620","100630","10064000"],c:"Ressalvados os produtos do Anexo I (arroz beneficiado)."},
+{i:16,n:"Hortícolas pré-cozidos ou cozidos em água ou vapor",p:["20021000","2004","2005"],c:"Sem adição de sal ou de outros produtos e substâncias."},
+{i:17,n:"Fruta de casca rija regional, amendoins e outras sementes torrados ou cozidos",p:["200811","200819"],c:"Sem adição de sal ou de outros produtos e substâncias."}
+];
+R7.forEach(r=>r.g="VII");
+// Anexo IV · art. 131 (redução de 60%), item a item.
+const IV_RAW=`1|Bolsa para drenagem|39269030
+2|Sistema para drenagem com conjunto intermediário para medição contínua da diurese|90189099
+3|Chapas e filmes para raios-X, sensibilizados em uma face|37011010
+4|Cimentos para reconstituição óssea|30064020
+5|Substitutos de enxerto ósseo|30049099
+6|Coletor para unidade de drenagem externa|39269040
+7|Conector completo com tampa|39174010,39174090
+8|Conector em Y|39174010,39174090
+9|Conjuntos de troca e concentrados polieletrolíticos para diálise|30049099
+10|Conjunto para autotransfusão|90189010
+11|Conjunto para hidrocefalia de baixo perfil|90219019
+12|Conjunto para hidrocefalia standard|90219019
+13|Eletrodo endocárdico definitivo|90219091
+14|Eletrodo epicárdico definitivo|90219091
+15|Eletrodo para marcapasso temporário endocárdico|90219091
+16|Eletrodo para marcapasso temporário epicárdico|90219091
+17|Espaçador de tendão|90219019
+18|Filmes especiais para raios-X sensibilizados em ambas as faces|37021020
+19|Filmes especiais para raios-X sensibilizados em uma face|37021010
+20|Filtro de linha arterial e venoso|84212990
+21|Filtro de sangue arterial e venoso para recirculação|84212990
+22|Filtro para cardioplegia|84212990
+23|Categutes, suturas, adesivos e hemostáticos esterilizados para cirurgia|30061010,30061020,30061090
+24|Hemoconcentrador para circulação extracorpórea|90189040
+25|Hemodialisador capilar|84212911
+26|Marcapasso cardíaco câmara dupla|90215000
+27|Marcapasso cardíaco multiprogramável com telemetria|90215000
+28|Outras chapas e filmes para raios-X|37011029
+29|Oxigenador de bolha com tubos para circulação extracorpórea|90189099
+30|Oxigenador de membrana com tubos para circulação extracorpórea|90189099
+31|Reservatório de cardiotomia|90189099
+32|Reservatório para cardioplegia com tubo sem filtro|90189099
+33|Rins artificiais|90189040
+34|Shunt lombo-peritonal|90219019
+35|Substituto temporário de pele (por cm2)|30059090
+36|Tela inorgânica|30061090
+37|Válvula para hidrocefalia|90219019
+38|Válvula para tratamento de ascite|90219019
+39|Fonte de irídio 192|28444390
+40|Stent vascular|90219012
+41|Reprocessador de filtros utilizados em hemodiálise|84798999
+42|Implantes osseointegráveis (parafuso) e componentes para próteses dentárias|90212900
+43|Cardiodesfibrilador implantável|90219011
+44|Espiral para embolização|90219012
+45|Imunoglobulina anti-Rh|30021221
+46|Outras imunoglobulinas séricas|30021222
+47|Concentrado de fator VIII|30021223
+48|Outras frações do sangue (exceto medicamentos, imunoglobulinas, fator VIII e soroalbumina em gel)|30021221,30021229
+49|Reagentes de diagnóstico ou de laboratório e materiais de referência certificados|38221100,38221200,38221300,38221910,38221920,38221930,38221940,38221990
+50|Reagente de diagnóstico à base de somatoliberina|30063021
+51|Produtos para obturação dentária, exceto cimentos|30064012
+52|Preparações em gel (lubrificante ou meio de ligação em exames e cirurgias)|30067000
+53|Bolsas para colostomia, ileostomia e urostomia|30069110
+54|Equipamentos de ostomia, exceto bolsas|30069190
+55|Bolsas para uso em medicina (hemodiálise e semelhantes)|39269030
+56|Artigos exclusivos de laboratório de análises clínicas|39269040
+57|Acessórios plásticos para linhas de sangue de hemodiálise|39269050
+58|Luvas cirúrgicas e luvas de procedimento|40151200,40151900
+59|Seringas, mesmo com agulhas|90183111,90183119,90183190
+60|Agulhas tubulares de metal e agulhas para suturas|90183211,90183212,90183213,90183219,90183220
+61|Agulhas, exceto as de metal e as para suturas|90183910
+62|Sondas, cateteres e cânulas|90183921,90183922,90183923,90183925,90183926,90183929
+63|Lancetas para vacinação e cautérios|90183930
+64|Instrumentos semelhantes a seringas, agulhas, cateteres e cânulas|90183991,90183999
+65|Brocas para odontologia|90184911,90184912,90184919
+66|Limas|90184920
+67|Grampos e clipes, aplicadores e extratores|90189095
+68|Outros instrumentos e aparelhos para medicina, cirurgia e odontologia|90183999
+69|Mesas de operação e exame, camas hospitalares e de uso clínico|94029010,94029020,94029090
+70|Fotocoagulador a laser|90182010
+71|Bisturi elétrico|90189021
+72|Aparelho de anestesia com monitor multiparâmetros|90189099
+73|Autoclave|84198110
+74|Retinógrafo|90185090
+75|Meios de cultura|38210000
+76|Termocicladores (diagnóstico e pesquisa)|84198999
+77|Partes e peças de termocicladores|84199040
+78|Pipetadores laboratoriais|84798912
+79|Cromatógrafo de fase líquida|90272012
+80|Sequenciadores automáticos de ADN por eletroforese capilar|90272021
+81|Aparelhos de eletroforese|90272029
+82|Analisadores por espectrofotometria|90273011,90273019,90273020
+83|Analisadores por fotometria|90275020
+84|Citômetro de fluxo|90275050
+85|Analisadores por radiações ópticas|90275090
+86|Outros analisadores para diagnóstico e pesquisa científica|90278999
+87|Espectrômetro de massa|90278100
+88|Outros analisadores para diagnóstico|90278999
+89|Micrótomo|90279010
+90|Partes e peças de analisadores laboratoriais|90279091,90279093,90279099
+91|Preservativo|40141000
+92|Dispositivo intrauterino (DIU)|90189099
+93|Substância para conservação de órgãos e tecidos|38249989
+94|Introdutor de punção para implante de eletrodo endocárdico|90219091
+95|Enxerto tubular de PTFE (por cm2)|90219099
+96|Enxerto arterial e venoso tubular inorgânico|90219099
+97|Botão para crânio|90219099
+98|Guia metálico para introdução de cateter duplo lumen|90183929
+99|Dilatador para implante de cateter duplo lumen|90183929
+100|Guia de troca para angioplastia|90183929
+101|Introdutor para cateter com e sem válvula|90183929
+102|Kit cânula|90183999
+103|Dreno para sucção|90183929
+104|Sistema de drenagem mediastinal|90183929
+105|Conjunto descartável de balão intra-aórtico|90189099`;
+const R4=IV_RAW.split("\n").map(l=>{const [i,n,c]=l.split("|");return {i:+i,n,p:c.split(","),g:"IV"}});
+G.VII={b:"Redução de 60%",l:"Anexo VII · art. 135 da LC 214/2025 · cClassTrib 200034 (CST 200)",e:"Paga 40% da alíquota padrão de IBS e CBS"};
+G.IV={b:"Redução de 60%",l:"Anexo IV · art. 131 da LC 214/2025 · cClassTrib 200030 (CST 200)",e:"Paga 40% da alíquota padrão de IBS e CBS",c:"Exige regularização do produto na Anvisa. Vendido a órgãos públicos ou a entidades de saúde imunes/CEBAS, passa a alíquota zero (art. 144, cClassTrib 200005). Confira a descrição do item."};
+
+// Anexos V, VI e XII, item a item.
+const mkR=(raw,g)=>raw.split("\n").map(l=>{const [i,n,c]=l.split("|");return {i,n,p:c.split(","),g}});
+const R5=mkR(`1.1|Comando de embreagem manual, suas partes e acessórios|87089910
+1.2|Comando de freio manual, suas partes e acessórios|87089910
+1.3|Comando de acelerador manual, suas partes e acessórios|87089910
+1.4|Inversão do pedal do acelerador, suas partes e acessórios|87089910
+1.5|Prolongamento de pedais, suas partes e acessórios|87089910
+1.6|Empunhadura, suas partes e acessórios|87082999
+1.7|Servo acionadores de volante, suas partes e acessórios|87089910
+1.8|Deslocamento de comandos do painel, suas partes e acessórios|87082999
+1.9|Plataforma giratória para assento de veículo, suas partes e acessórios|87082999
+1.10|Trilho elétrico para deslocamento do assento dianteiro, suas partes e acessórios|87082999
+1.11|Plataforma de elevação para cadeira de rodas|84289090
+1.12|Rampa para cadeira de rodas, suas partes e acessórios|87082999
+1.13|Guincho para transportar cadeira de rodas|84253110
+2.1|Bengala para deficiência visual|66020000
+2.2|Relógio em braille com sintetizador de voz|91021110,91021190,91029100
+2.3|Termômetro digital com sistema de voz|90251990
+2.4|Calculadora digital com sistema de voz|84701000,84702900
+2.5|Agenda eletrônica com teclado em braille|85437099
+2.6|Reglete para escrita em braille|90172000
+2.7|Display e teclado braille para microcomputador|84716090
+2.8|Máquina de escrever em braille|84729099
+2.9|Impressora de caracteres em braille|84433222
+2.10|Sintetizador de voz para leitura de dados de microcomputadores|84718000
+3.1|Aparelho telefônico com teclado alfanumérico e visor (deficiência auditiva)|85171100,85171300,85171410,85171431,85171432,85171439,85171441,85171449,85171490,85171830,85171890
+3.2|Relógio despertador vibratório ou luminoso|91031000,91051100
+3.3|Mouse controlável pelo movimento dos olhos|84716053`,"V");
+const R6=mkR(`1|Acetato de dextroalfatocoferol|29362812
+2|Acetato de lisina|29224190
+3|Acetato de potássio|29152990
+4|Acetato de sódio|29152910
+5|Acetato de zinco|29152990
+6|Acetiltirosina|29225039
+7|Ácido acético|29152100
+8|Ácido ascórbico|29362710
+9|Ácido aspártico|29224990
+10|Ácido cítrico|29181400
+11|Ácido fólico|29362911
+12|Ácido glutâmico|29224210
+13|Ácido málico|29181990
+14|Ácido selenioso|28111990
+15|Água para injeção|20021000
+16|Alanilglutamina|29224990
+17|Alanina|29224990
+18|Albumina humana|30021236
+19|Arginina|29252919
+20|Asparagina|29224990
+21|Bicarbonato de sódio|28363000
+22|Biotina|29362931
+23|Cianocobalamina|29362610
+24|Cistina|29309039
+25|Cloreto crômico|28273993
+26|Cloreto de cálcio|28272010,28272090
+27|Cloreto de magnésio|28273110,28273190
+28|Cloreto de manganês|28273995
+29|Cloreto de potássio|31042010,31042090
+30|Cloreto de sódio|25010090
+32|Cloridrato de piridoxina|29362520
+33|Cloridrato de tiamina|29362210
+34|Cocarboxilase|29362290
+35|Colecalciferol|29362921
+36|Ergocalciferol|29362929
+37|Fenilalanina|29224990
+38|Fitomenadiona|29362940
+39 a 46|Fórmulas para dietas especiais (isentas de fenilalanina, metionina, lisina, leucina/isoleucina/valina, aminoácidos não essenciais; cetogênica)|21069090
+47|Fórmula hiperlipídica (triglicerídios de cadeia média ou triheptanoína)|22029900
+48|Preparação líquida de trioleato e trierucato de glicerol|22029900
+49|Fosfato de potássio dibásico|28352400
+50|Fosfato de potássio monobásico|28352400
+51|Fosfato de sódio monobásico|28352200
+52|Fosfato de tiamina|29362290
+53|Fosfato sódico de riboflavina|29362320
+54|Frutose|17025000
+55|Glicerofosfato de sódio|29199090
+56|Glicina|29224910
+57|Gliconato de cálcio|29181610
+58|Glicose|17023011
+59|Histidina|29332992
+60|Icodextrina|35051000
+61|Iodeto de potássio|28276012
+62|Isoleucina|29224990
+63|Lecitina de ovo|29232000
+64|Leucina|29224990
+65|Levovalina|29224990
+66|Lisina|29224110
+67|Metionina|29304010,29304090
+68|Nicotinamida|29362952
+69|Palmitato de retinol|29362113
+70|Prolina|29224990
+71|Riboflavina|29362310
+72|Selenito de sódio|28429000
+73|Serina|29225099
+74|Sorbitol|29054400
+75|Sulfato de magnésio|28332100
+76|Sulfato de zinco|28332970
+77|Taurina|29224990
+78|Tirosina|29225039
+79|Tocoferol|29362811
+80|Treonina|29225099
+81|Triglicerídeos de cadeia média|15131900,15132911`,"VI");
+const R12=mkR(`1.1|Eletrocardiógrafos|90181100
+1.2|Eletroencefalógrafos|90181980
+1.3|Aparelhos de eletrodiagnóstico (exceto os de 9018.11.00, 9018.12, 9018.13.00, 9018.14 e 9018.19.10/20)|90181980
+2|Aparelhos de raios ultravioleta ou infravermelhos|90182010,90182020,90182090
+3|Artigos e aparelhos ortopédicos|90211010
+4|Artigos e aparelhos para fraturas|90211020
+5|Artigos e aparelhos de prótese (exceto dentários e 9021.39.91/99)|90213110,90213120,90213190,90213911,90213919,90213920,90213930,90213940,90213980
+6|Tomógrafo computadorizado|90221200
+7|Aparelhos de raio X móveis (exceto 9022.19.91)|90221311,90221319,90221390
+8|Aparelho de radiocobalto (bomba de cobalto)|90222110
+9|Aparelho de crioterapia|90189099
+10|Aparelho de gamaterapia|90222120
+11|Aparelhos de radiações ionizantes para uso médico (exceto 9022.21.10 e 9022.21.20)|90222190
+12|Densímetros, termômetros, pirômetros, barômetros, higrômetros e semelhantes|90251111,90251119,90251191,90251199,90251910,90251990,90258000,90259010,90259090
+13|Respirador|90192040
+14|Monitor multiparâmetros|90181980
+15|Bomba de infusão|90189010
+16|Aparelhos de diagnóstico por ressonância magnética|90181300
+17|Aparelhos de ultrassom|90181210,90181290`,"XII");
+G.V={k:"wr",b:"Redução de 60%",l:"Anexo V · art. 132 da LC 214/2025 · cClassTrib 200031 (CST 200)",e:"Paga 40% da alíquota padrão de IBS e CBS",c:"Alíquota zero quando adquirido por órgãos da administração pública (cClassTrib 200008)."};
+G.VI={k:"wr",b:"Redução de 60%",l:"Anexo VI · art. 133 da LC 214/2025 · cClassTrib 200033 (CST 200)",e:"Paga 40% da alíquota padrão de IBS e CBS",c:"Nutrição enteral e parenteral e fórmulas especiais. Alíquota zero quando adquirido por órgãos da administração pública (cClassTrib 200011)."};
+G.XII={b:"Alíquota zero",l:"Anexo XII · art. 144 da LC 214/2025 · cClassTrib 200004 (CST 200)",e:"IBS e CBS reduzidos a zero",c:"Só vale para dispositivos que atendam aos requisitos da Anvisa (art. 144, § 1º)."};
+G.IV.k="wr";G.VII.k="wr";
+const R8=mkR(`1|Sabões de toucador|34011190
+2|Dentifrícios|33061000
+3|Escovas de dentes|96032100
+4|Papel higiênico|48181000
+5|Água sanitária|38089419
+6|Sabões em barra|34011900
+7|Fraldas e artigos higiênicos semelhantes, de qualquer matéria|96190000`,"VIII");
+G.VIII={k:"wr",b:"Redução de 60%",l:"Anexo VIII · art. 136 da LC 214/2025 · cClassTrib 200035 (CST 200)",e:"Paga 40% da alíquota padrão de IBS e CBS",c:"A descrição do produto precisa coincidir com o texto legal. Absorventes e tampões higiênicos (mesmo NCM 9619.00.00) têm regra própria de saúde menstrual."};
+const ALL=R.concat(R15,R7,R4,R5,R6,R8,R12);
+const dg=s=>s.replace(/\D/g,"");
+const fmt=s=>{const d=dg(s);return d.length>6?d.slice(0,4)+"."+d.slice(4,6)+"."+d.slice(6):d.length>4?d.slice(0,4)+"."+d.slice(4):d};
+const norm=s=>s.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+const q=document.getElementById("q"),out=document.getElementById("out");
+const covers=(r,d)=>r.p.some(p=>d.startsWith(p))&&!(r.x||[]).some(x=>d.startsWith(x));
+const card=(r,d)=>`<div class="card"><span class="badge ${G[r.g].k||"zero"}">${G[r.g].b}</span><div class="big">Anexo ${r.g} · item ${r.i} · ${r.n}</div><div class="mut">${d?"NCM "+fmt(d)+" · ":""}${G[r.g].e}</div><div class="mut" style="margin-top:6px">${G[r.g].l}</div>${r.c||G[r.g].c?`<div class="note">${r.c||G[r.g].c}</div>`:""}${r.xn&&(!d||d.length<8)?`<div class="note">${r.xn}</div>`:""}</div>`;
+function render(){
+ const raw=q.value.trim(),d=dg(raw);
+ if(!raw){out.innerHTML="";return}
+ let h="";
+ if(d.length<2&&/[a-zA-ZÀ-ÿ]{2,}/.test(raw)||(/[a-zA-ZÀ-ÿ]{2,}/.test(raw)&&d.length<4)){
+  const t=norm(raw);
+  const hits=ALL.filter(r=>norm(r.n).includes(t));
+  if(!hits.length){out.innerHTML=`<div class="card"><span class="badge std">Sem resultado</span><div class="mut" style="margin-top:8px">Nenhum item dos anexos carregados tem esse nome. Tente outro termo ou digite o NCM.</div></div>`;return}
+  out.innerHTML=hits.map(r=>card(r,"")+`<div class="codes" style="margin-top:-6px">${r.p.map(p=>`<span class="cd" onclick="pick('${p}')">${fmt(p)}</span>`).join("")}</div>`).join("");return}
+ if(d.length<4){out.innerHTML=`<div class="mut" style="margin-top:14px">Digite pelo menos 4 dígitos do NCM.</div>`;return}
+ const full=ALL.filter(r=>covers(r,d));
+ const part=d.length<8?ALL.filter(r=>r.p.some(p=>p.length>d.length&&p.startsWith(d))&&!full.includes(r)):[];
+ const grp={};full.forEach(r=>(grp[r.g]=grp[r.g]||[]).push(r));
+ Object.keys(grp).forEach(g=>{const a=grp[g];
+  if(a.length==1){h+=card(a[0],d);return}
+  h+=`<div class="card"><span class="badge ${G[g].k||"zero"}">${G[g].b}</span><div class="big">Anexo ${g} · ${a.length} itens para este NCM</div><div class="mut">NCM ${fmt(d)} · ${G[g].e}</div><div class="mut" style="margin:6px 0">${G[g].l}</div>${a.map(r=>`<div style="margin-top:6px">• <b>Item ${r.i}</b> · ${r.n}${r.c?` <span class="mut">(${r.c})</span>`:""}</div>`).join("")}<div class="note">O NCM sozinho não basta: o item depende da descrição do produto.${G[g].c?" "+G[g].c:""}</div></div>`});
+ if(part.length)h+=`<div class="card"><div class="mut">Códigos que começam com ${fmt(d)} e constam no Anexo I</div>${part.map(r=>`<div style="margin-top:10px"><b>Anexo ${r.g} · item ${r.i}</b> · ${r.n}<div class="codes">${r.p.filter(p=>p.startsWith(d)).map(p=>`<span class="cd" onclick="pick('${p}')">${fmt(p)}</span>`).join("")}</div></div>`).join("")}</div>`;
+ if(!full.length&&!part.length)h+=`<div class="card"><span class="badge std">Não consta nos anexos carregados</span><div class="big">NCM ${fmt(d)}</div><div class="mut">Não está nos anexos carregados. Ainda pode ter redução ou alíquota zero em outro anexo (60%, saúde, medicamentos, insumos), que esta base ainda não cobre: confira o texto da lei.</div></div>`;
+ out.innerHTML=h;
+}
+function pick(c){q.value=fmt(c);render()}
+q.addEventListener("input",render);
+document.getElementById("chips").innerHTML=["1006.30.11","0901","0207.14.11","1507.90.11","9018.31.11","0702.00.00","0803.90.00","0302.71.00","0304.82","2101.11.10","café","queijo"].map(c=>`<button class="chip" onclick="pick2('${c}')">${c}</button>`).join("");
+function pick2(c){q.value=c;render()}
+</script>
+</body>
+</html>
