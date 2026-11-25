@@ -37,7 +37,7 @@ input:focus{border-color:var(--ac)}
 <input id="q" autocomplete="off" placeholder="Ex.: 1006.30.11 ou café" autofocus>
 <div class="chips" id="chips"></div>
 <div id="out"></div>
-<p class="warn">Carregados: Anexos I, XII e XV (alíquota zero ou redução de 100%) e Anexos IV, V, VI, VII e VIII (redução de 60%), conforme o texto consolidado da LC 214/2025 com as LCs 227/2026 e 235/2026, conferido em 08/11/2026 no Buscador NCM. Ainda não carregados: Anexos IX, X, XI e XIII, Imposto Seletivo (XVII) e medicamentos (art. 146). NCM fora desta base não significa tributação integral. A lista é taxativa e tem condições e exceções no texto legal. Não substitui consulta contábil.</p>
+<p class="warn">Carregados: Anexos I, XII, XIII e XV (alíquota zero ou redução de 100%) e Anexos IV, V, VI, VII, VIII, IX, X e XI (redução de 60%), conforme o texto consolidado da LC 214/2025 com as LCs 227/2026 e 235/2026, conferido em 08/11/2026 no Buscador NCM. Ainda não carregados: Imposto Seletivo (XVII) e medicamentos (art. 146). NCM fora desta base não significa tributação integral. A lista é taxativa e tem condições e exceções no texto legal. Não substitui consulta contábil.</p>
 </main>
 <script>
 // Anexo I · art. 125. p = prefixos (só dígitos), x = exceções, c = condição legal, xn = texto das exceções.
@@ -345,7 +345,74 @@ const R8=mkR(`1|Sabões de toucador|34011190
 6|Sabões em barra|34011900
 7|Fraldas e artigos higiênicos semelhantes, de qualquer matéria|96190000`,"VIII");
 G.VIII={k:"wr",b:"Redução de 60%",l:"Anexo VIII · art. 136 da LC 214/2025 · cClassTrib 200035 (CST 200)",e:"Paga 40% da alíquota padrão de IBS e CBS",c:"A descrição do produto precisa coincidir com o texto legal. Absorventes e tampões higiênicos (mesmo NCM 9619.00.00) têm regra própria de saúde menstrual."};
-const ALL=R.concat(R15,R7,R4,R5,R6,R8,R12);
+const R10=mkR(`42|Fotografias artísticas originais|49119100
+43|Quadros, pinturas e desenhos artísticos originais|97019100
+44|Gravuras, estampas e litografias artísticas originais|97029000
+45|Produções originais de arte estatutária ou de escultura|97039000`,"X");
+G.X={k:"wr",b:"Redução de 60%",l:"Anexo X · art. 139 da LC 214/2025 · cClassTrib 200039 (CST 200)",e:"Paga 40% da alíquota padrão de IBS e CBS",c:"Vale para produções nacionais artísticas, culturais, de eventos e jornalísticas, conforme o art. 139. O Anexo X tem 57 itens, mas só estes 4 têm NCM; os demais são serviços e direitos (NBS)."};
+const R11=mkR(`2.1|Viatura operacional militar, suas partes e peças|87091100,87091900,87099000
+2.2|Carro blindado e carro de combate, suas partes e peças|87100000
+2.3|Outros veículos para Segurança Pública e Forças Armadas, suas partes e peças|87091100,87091900,87099000
+2.4|Simuladores de veículos militares|90318099
+2.5|Tratores para Segurança Pública e Forças Armadas, suas partes e peças|870110,870121,870122,870123,870124,870129,870130,870191,870192,870193,870194,870195
+2.6|Radares para uso militar|85261000
+2.7|Foguetes para uso militar|93012000
+2.8|Explosivos de emprego militar|36020000,93062110,93062120,93062130,93062190,93062900,93063000,93069010,93069020,93069090
+2.9|Optrônicos|85258929
+2.10|Rações operacionais|21069030
+2.11|Minas marítimas|93062110,93062120,93062130,93062190,93062900,93063000,93069010,93069020,93069090
+2.12|Cartuchos de munição naval e de artilharia (calibre igual ou superior a 40 mm) e componentes|93062110,93062120,93062130,93062190,93062900
+2.13|Bombas, torpedos, minas, mísseis, foguetes e componentes|93062110,93062120,93062130,93062190,93062900,93063000,93069010,93069020,93069090
+2.14|Aeronaves, inclusive VANT, para uso pela segurança nacional, suas partes e peças|88021100,88021210,88021290,88022010,88022021,88022022,88022090,88023010,88023021,88023029,88023031,88023039,88023090,88024010,88024090,88026000,88061000,88062100,88062200,88062300,88062400,88062900,88069100,88069200,88069300,88069400,88069900
+2.15|Veículos espaciais para uso pela segurança nacional|88026000
+2.16|Paraquedas para uso pela segurança nacional|88040000
+2.17|Aparelhos e dispositivos para lançamento e aterrissagem de veículos aéreos e espaciais|88051000
+2.18|Simuladores de voo e similares|88052100
+2.19|Equipamentos de apoio no solo|88051000,88052100,88052900
+2.20|Equipamentos de auxílio à comunicação, navegação e controle de tráfego aéreo|90142010,90142020,90142030,90142090
+2.21|Embarcações construídas no País, suas peças, partes e componentes para reparo|89012000,89061000
+2.22|Dispositivos de segurança da informação do tipo Prevenção de Intrusão (IPS)|85176259
+2.23|Dispositivos de segurança da informação do tipo Detecção de Intrusão (IDS)|85176259
+2.24|Dispositivos de autenticação (tokens, leitores biométricos)|84719014,85235210,85235290
+2.25|Equipamentos para criptografia|84715090
+2.26|Firewalls|84714900,85176259
+2.27|Switches e roteadores seguros|85176234,85176241,85176249
+2.28|Dispositivos de comunicação criptografada|85176272,85176273,85176277,85176278,85176279
+2.29|Unidades de armazenamento criptografadas|85235110,85235190
+2.30|Servidores de armazenamento seguro|85235110,85235190`,"XI");
+G.XI={k:"wr",b:"Redução de 60%",l:"Anexo XI · art. 142 da LC 214/2025 · cClassTrib 200043 ou 200044 (CST 200)",e:"Paga 40% da alíquota padrão de IBS e CBS",c:"Bens relativos à soberania e à segurança nacional, da informação e cibernética. Vale no fornecimento à administração pública (200043); os itens de segurança da informação exigem desenvolvimento por sociedade com sócio brasileiro (200044). O Anexo XI também lista serviços (NBS), que não aparecem aqui."};
+const R13=mkR(`1|Barra de apoio para pessoa com deficiência física|83024100
+2.1|Cadeira de rodas e outros veículos para deficientes, sem mecanismo de propulsão|87131000
+2.2|Cadeiras de rodas com motor ou outro mecanismo de propulsão e outros veículos para pessoas com incapacidade|87139000
+3|Partes e acessórios destinados exclusivamente a cadeiras de rodas ou outros veículos para deficientes|87142000
+4|Aparelhos para facilitar a audição dos surdos, exceto partes e acessórios|90214000
+5|Partes e acessórios de aparelhos para facilitar a audição dos surdos|90219092
+6|Implantes cocleares|90219019`,"XIII");
+G.XIII={b:"Alíquota zero",l:"Anexo XIII · art. 145 da LC 214/2025 · cClassTrib 200007 (CST 200)",e:"IBS e CBS reduzidos a zero, com manutenção do crédito",c:"Só vale para dispositivos próprios para pessoas com deficiência. O benefício depende da operação e da finalidade, não só do NCM."};
+const RIX=mkR(`1|Biofertilizantes|31010000
+2|Fertilizantes (adubos)|31,38249977,38249979,38249989
+3|Corretivos de solo, remineralizadores e substratos para plantas|25
+4|Inoculantes, meios de cultura e microorganismos para uso agrícola|300249,30029000,38210000
+5|Bioestimulantes e bioinsumos para controle fitossanitário|1211,3807,3808,3824
+6|Defensivos agropecuários (inseticidas, fungicidas, herbicidas, acaricidas etc.)|3808,38249989
+7|Resíduos e matérias-primas para fabricar fertilizantes, corretivos e bioinsumos|0506,12011000,1213,13019090,1302,14019000,14049090,21022000,2302,2303,2304,2305,2306,2308,2703,28399010,28399050,292241,292242,292243,292244,292249,293040,330112,330113,330119,330124,330125,330129,330130,330190,38029040,3804,38249971,44013900,44014100,44014900,44029000,47010000,53050090,68062000
+8|Ácidos, enxofre e soda para fabricar fertilizantes|2503,2510,2802,28061020,28070010,28080010,280920,28111920,281511,281512,283620,29152100
+9|Enzimas para decomposição de matéria orgânica|3507904
+10|Sementes (genética, básica, certificada, crioula etc.)|07,10,12
+11|Mudas e materiais propagativos de plantas e fungos|0601,0602
+12|Vacinas, soros e medicamentos veterinários (exceto animais domésticos)|300212,300215,300242,30029000,3004
+13|Aves de um dia (exceto ornamentais)|010511,010512,010513,010514,010515
+14|Embriões e sêmen, congelado ou resfriado|0511
+15|Reprodutores de raça pura e matrizes|010221,010229,010231,010239,01029000,010310,010391,010392,010410,010420
+16|Ovos fertilizados|040711,040719
+17|Girinos e alevinos|01069000
+18|Rações, concentrados, suplementos, aditivos e premix (exceto animais domésticos)|230990
+19|Sementes e cereais para ração ou alimentação animal|10,11,12
+20|Farelos e tortas para ração ou alimentação animal|2301,2302,2303,2304,2305,2306,2308
+21|Alho em pó, sal mineralizado, farinhas animais, gorduras e DL-metionina para ração|0210,0309,07129010,15,2501,25210000,293040
+35|Vinhaça|23033000,23032000`,"IX");
+G.IX={k:"wr",b:"Redução de 60%",l:"Anexo IX · art. 138 da LC 214/2025 · cClassTrib 200038 (CST 200)",e:"Paga 40% da alíquota padrão de IBS e CBS",c:"Só vale para o produto usado como insumo agropecuário ou aquícola (sementes, ração, fertilizante etc.), conforme a descrição do item, e registrado no Ministério da Agricultura quando exigido (art. 138, § 1º). Na venda entre contribuintes e a produtor rural há diferimento (cClassTrib 515001). Os itens 22 a 34 do anexo não têm NCM e não aparecem aqui."};
+const ALL=R.concat(R15,R7,R4,R5,R6,R8,R10,R11,R12,R13,RIX);
 const dg=s=>s.replace(/\D/g,"");
 const fmt=s=>{const d=dg(s);return d.length>6?d.slice(0,4)+"."+d.slice(4,6)+"."+d.slice(6):d.length>4?d.slice(0,4)+"."+d.slice(4):d};
 const norm=s=>s.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
